@@ -179,12 +179,10 @@ def delta_surface_fill(dem, anomalies, iterations=20):
     return filled_dem
 
 
-# 根据异常值检测和填充函数处理DEM
 def fill_nans_with_delta_surface_fill(dem, anomalies):
     return delta_surface_fill(dem, anomalies)
 
 
-# 根据曲率检测异常值
 def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     curvature = compute_curvature(dem)
 
