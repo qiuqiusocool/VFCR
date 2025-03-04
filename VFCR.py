@@ -414,8 +414,8 @@ def computeobjectiveX(x, d1_resampled, d2, combined_mask, Cu, Ax1, Ax2, lambdax,
 
 # 主函数
 def main():
-    y1_path = '/y1.tif'
-    y2_path = '/y2.tif'
+    y1_path = 'y1.tif'
+    y2_path = 'y2.tif'
 
     with rasterio.open(y1_path) as src1:
         d1 = src1.read(1)
@@ -470,7 +470,7 @@ def main():
 
     # 保存重建后的DEM
     profile2.update(dtype=rasterio.float32, count=1, compress='lzw')
-    with rasterio.open('/x_VFCR.tif', 'w', **profile2) as dst:
+    with rasterio.open('x_VFCR.tif', 'w', **profile2) as dst:
         dst.write(reconstructed_DEM.astype(rasterio.float32), 1)
 
     print('Reconstructed DEM saved as reconstructed_DEM.tif')
