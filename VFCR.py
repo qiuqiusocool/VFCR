@@ -18,13 +18,12 @@ def hillshade(array, azimuth, angle_altitude):
     aspect = np.arctan2(-x, y)
     azimuth_rad = azimuth * np.pi / 180.
     altitude_rad = angle_altitude * np.pi / 180.
-
     shaded = np.sin(altitude_rad) * np.sin(slope) + np.cos(altitude_rad) * np.cos(slope) * np.cos(azimuth_rad - aspect)
     shaded = shaded.clip(0, 1)
     return shaded
 
 
-# 绘制结果
+# 绘制原始和重建DEM的结果图
 def plot_results(original_DEM1, original_DEM2, reconstructed_DEM):
     fig1, axes1 = plt.subplots(2, 3, figsize=(24, 12))
     norm1 = Normalize(vmin=np.nanmin(original_DEM1), vmax=np.nanmax(original_DEM1))
@@ -64,32 +63,32 @@ def plot_results(original_DEM1, original_DEM2, reconstructed_DEM):
     plt.show()
 
 
-# 定义掩码
+# 定义掩码函数
 def definemask(N):
     return np.ones((N, N))
 
 
-# 水平方向上的前向差分
+# 计算水平前向差分
 def dxf(x):
     return cp.roll(x, -1, axis=0) - x
 
 
-# 垂直方向上的前向差分
+# 计算垂直前向差分
 def dyf(x):
     return cp.roll(x, -1, axis=1) - x
 
 
-# 水平方向上的后向差分
+# 计算水平后向差分
 def dxb(x):
     return x - cp.roll(x, 1, axis=0)
 
 
-# 垂直方向上的后向差分
+# 计算垂直后向差分
 def dyb(x):
     return x - cp.roll(x, 1, axis=1)
 
 
-# 配准
+# 图像配准函数
 def register_images(ref_image, mov_image):
     ref_mask = ~np.isnan(ref_image)
     mov_mask = ~np.isnan(mov_image)
@@ -120,10 +119,12 @@ def register_images(ref_image, mov_image):
     return final_shifted_image
 
 
+# 重采样
 def resample_to_low_res(x, scale_factor):
     return zoom(x, scale_factor, order=1)
 
 
+# 计算曲率
 def compute_curvature(dem):
     dzdx = np.gradient(dem, axis=1)
     dzdy = np.gradient(dem, axis=0)
@@ -136,6 +137,7 @@ def compute_curvature(dem):
     return curvature
 
 
+# 检测异常值
 def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     curvature = compute_curvature(dem)
 
@@ -145,6 +147,7 @@ def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     return anomalies
 
 
+# 处理缺失值
 def delta_surface_fill(dem, anomalies, iterations=20):
     x, y = np.indices(dem.shape)
     valid_points = ~np.isnan(dem)
@@ -176,30 +179,20 @@ def delta_surface_fill(dem, anomalies, iterations=20):
     return filled_dem
 
 
+# 根据异常值检测和填充函数处理DEM
 def fill_nans_with_delta_surface_fill(dem, anomalies):
     return delta_surface_fill(dem, anomalies)
 
-
-def compute_curvature(dem):
-    dzdx = np.gradient(dem, axis=1)
-    dzdy = np.gradient(dem, axis=0)
-    dzdxx = np.gradient(dzdx, axis=1)
-    dzdyy = np.gradient(dzdy, axis=0)
-    dzdxy = np.gradient(dzdx, axis=0)
-
-    curvature = (dzdxx * (1 + dzdy ** 2) - 2 * dzdx * dzdy * dzdxy + dzdyy * (1 + dzdx ** 2)) / (
-            (1 + dzdx ** 2 + dzdy ** 2) ** 1.5)
-    return curvature
 
 # 根据曲率检测异常值
 def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     curvature = compute_curvature(dem)
 
-    # 更严格的异常值检测条件
     anomalies = np.zeros_like(dem, dtype=int)
     anomalies[(curvature > curvature_upper_threshold) | (curvature < curvature_lower_threshold)] = 1
 
     return anomalies
+
 
 # 处理 DEM 并移除异常值
 def process_dem_with_anomaly_detection(dem, curvature_lower_threshold, curvature_upper_threshold):
@@ -208,7 +201,8 @@ def process_dem_with_anomaly_detection(dem, curvature_lower_threshold, curvature
     dem_processed[anomalies == 1] = np.nan
     return dem_processed
 
-# 主函数
+
+# 核心函数
 def imagedomain(d1, d2, lambdad, lambdax, mu1, au, bu, tau, tolerance):
     d1 = cp.array(d1, dtype=cp.float32)
     d2 = cp.array(d2, dtype=cp.float32)
@@ -418,6 +412,7 @@ def computeobjectiveX(x, d1_resampled, d2, combined_mask, Cu, Ax1, Ax2, lambdax,
     return objective
 
 
+# 主函数
 def main():
     y1_path = '/y1.tif'
     y2_path = '/y2.tif'
