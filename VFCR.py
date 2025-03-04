@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
 
-# 计算地形阴影
+# Calculate hillshade
 def hillshade(array, azimuth, angle_altitude):
     x, y = np.gradient(array)
     slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
@@ -23,7 +23,7 @@ def hillshade(array, azimuth, angle_altitude):
     return shaded
 
 
-# 绘制原始和重建DEM的结果图
+# Plot the results of the original and reconstructed DEMs
 def plot_results(original_DEM1, original_DEM2, reconstructed_DEM):
     fig1, axes1 = plt.subplots(2, 3, figsize=(24, 12))
     norm1 = Normalize(vmin=np.nanmin(original_DEM1), vmax=np.nanmax(original_DEM1))
@@ -63,32 +63,32 @@ def plot_results(original_DEM1, original_DEM2, reconstructed_DEM):
     plt.show()
 
 
-# 定义掩码函数
+# Define the masking function
 def definemask(N):
     return np.ones((N, N))
 
 
-# 计算水平前向差分
+# Calculate the horizontal forward difference
 def dxf(x):
     return cp.roll(x, -1, axis=0) - x
 
 
-# 计算垂直前向差分
+# Calculate the vertical forward difference
 def dyf(x):
     return cp.roll(x, -1, axis=1) - x
 
 
-# 计算水平后向差分
+# Calculate the horizontal backward difference
 def dxb(x):
     return x - cp.roll(x, 1, axis=0)
 
 
-# 计算垂直后向差分
+# Calculate the vertical backward difference
 def dyb(x):
     return x - cp.roll(x, 1, axis=1)
 
 
-# 图像配准函数
+# Image registration function
 def register_images(ref_image, mov_image):
     ref_mask = ~np.isnan(ref_image)
     mov_mask = ~np.isnan(mov_image)
@@ -119,12 +119,12 @@ def register_images(ref_image, mov_image):
     return final_shifted_image
 
 
-# 重采样
+# Resampling
 def resample_to_low_res(x, scale_factor):
     return zoom(x, scale_factor, order=1)
 
 
-# 计算曲率
+# Calculate curvature
 def compute_curvature(dem):
     dzdx = np.gradient(dem, axis=1)
     dzdy = np.gradient(dem, axis=0)
@@ -137,7 +137,7 @@ def compute_curvature(dem):
     return curvature
 
 
-# 检测异常值
+# Detect outliers
 def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     curvature = compute_curvature(dem)
 
@@ -147,7 +147,7 @@ def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     return anomalies
 
 
-# 处理缺失值
+# Handle missing values
 def delta_surface_fill(dem, anomalies, iterations=20):
     x, y = np.indices(dem.shape)
     valid_points = ~np.isnan(dem)
@@ -192,7 +192,7 @@ def detect_anomalies(dem, curvature_lower_threshold, curvature_upper_threshold):
     return anomalies
 
 
-# 处理 DEM 并移除异常值
+# Process DEM and remove outliers
 def process_dem_with_anomaly_detection(dem, curvature_lower_threshold, curvature_upper_threshold):
     dem_processed = dem.copy()
     anomalies = detect_anomalies(dem_processed, curvature_lower_threshold, curvature_upper_threshold)
@@ -200,7 +200,7 @@ def process_dem_with_anomaly_detection(dem, curvature_lower_threshold, curvature
     return dem_processed
 
 
-# 核心函数
+# Core function
 def imagedomain(d1, d2, lambdad, lambdax, mu1, au, bu, tau, tolerance):
     d1 = cp.array(d1, dtype=cp.float32)
     d2 = cp.array(d2, dtype=cp.float32)
@@ -334,7 +334,6 @@ def imagedomain(d1, d2, lambdad, lambdax, mu1, au, bu, tau, tolerance):
 
     reconstructed_DEM = x.get()
 
-    # 检测和填补异常值
     reconstructed_DEM_before_anomalies = reconstructed_DEM.copy()
     curvature_lower_threshold = -0.2
     curvature_upper_threshold = 1
@@ -410,8 +409,9 @@ def computeobjectiveX(x, d1_resampled, d2, combined_mask, Cu, Ax1, Ax2, lambdax,
     return objective
 
 
-# 主函数
+# Main function
 def main():
+    # Input the data to be fused
     y1_path = 'y1.tif'
     y2_path = 'y2.tif'
 
@@ -466,7 +466,7 @@ def main():
 
     plot_results(d1, d2, reconstructed_DEM)
 
-    # 保存重建后的DEM
+    # Save the fused DEM
     profile2.update(dtype=rasterio.float32, count=1, compress='lzw')
     with rasterio.open('x_VFCR.tif', 'w', **profile2) as dst:
         dst.write(reconstructed_DEM.astype(rasterio.float32), 1)
