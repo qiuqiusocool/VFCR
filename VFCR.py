@@ -433,7 +433,7 @@ def main():
     d1[d1 > 3e+38] = np.nan
     d1[d1 < -3e+38] = np.nan
 
-    curvature_lower_threshold = -2  # 调整为更窄的范围
+    curvature_lower_threshold = -2
     curvature_upper_threshold = 3
     d1_processed = process_dem_with_anomaly_detection(d1, curvature_lower_threshold, curvature_upper_threshold)
 
